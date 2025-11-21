@@ -6,4 +6,10 @@ Graph comparing the total cost of an event and the estimated media value gained.
 
 **Efficiency Vs. Impact:**
 
-Graph visualizing event performance by comparing efficiency (CPM - cost per 1,000 impressions) versus Impact (total impressions generated). The plot is log-scaled on the y-axis to account for the extreme variation in audience reach across events. \nThe vertical red line at CPM = 10 separates efficient (right side) from inefficient (left side) events. \nThe horizontal blue line at 1,250,000 impressions separates high-impact (above) from low-impact (below) events. \nThe resulting quadrants reflect how we decided to classify the ROI profiles of the events.
+Graph visualizing event performance by comparing efficiency (CPM - cost per 1,000 impressions) versus Impact (total impressions generated). The plot is log-scaled on the y-axis to account for the extreme variation in audience reach across events. 
+
+The vertical red line at CPM = 10 separates efficient (right side) from inefficient (left side) events. 
+
+The horizontal blue line at 1,250,000 impressions separates high-impact (above) from low-impact (below) events. 
+
+The resulting quadrants reflect how we decided to classify the ROI profiles of the events.
