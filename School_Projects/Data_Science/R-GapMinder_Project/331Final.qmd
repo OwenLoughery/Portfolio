@@ -1,0 +1,448 @@
+---
+title: "More Books, Less Babies?"
+subtitle: "A rigorous statistical analysis on mean years in school vs. babies per woman (ages 15-44)"
+author: "Owen Loughery, Lenka Masic, Catherine Mispagel, Owen Gresko"
+theme: Litera
+format: 
+  html:
+    embed-resources: true
+    code-tools: true
+    toc: true
+    number-sections: false
+    code-fold: true
+editor: source
+execute: 
+  error: true
+  echo: true
+  message: false
+  warning: false
+---
+
+<img src="Gemini_Generated_Image_hllc2nhllc2nhllc.jpeg" width="300">
+
+### Data Cleaning
+
+In order to follow through with the data analysis, it is necessary to clean the data sets. The process is outlined below.
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(gganimate)
+library(gifski)
+library(broom)
+library(kableExtra)
+library(gt)
+library(patchwork)
+
+
+fertility <- read.csv("children_per_woman_total_fertility.csv")
+school <- read.csv("mean_years_in_school_women_of_reproductive_age_15_to_44.csv")
+
+school <- school |> #Cleaning school df
+  pivot_longer( #pivoting long to make years as rows instead of columns
+    cols = starts_with("X"),
+    names_to = "year",
+    values_to = "mean_years_in_school"
+  ) |>
+  mutate(year = str_remove(year, "X")) #cleaning year variable
+
+fertility <- fertility |> #Cleaning fertility df
+  pivot_longer( #pivoting long to make years as rows instead of columns
+    cols = starts_with("X"),
+    names_to = "year",
+    values_to = "babies_per_woman"
+  ) |>
+  mutate(year = str_remove(year, "X"))  #cleaning year variable
+
+school_fertility_df <- school |> #Joining two data sets
+  inner_join(fertility, #Using inner join because we want to compare relationship between the two variables so do not want missing values
+             by = c("country", "year"))
+
+school_fertility_df <- school_fertility_df |> #making year and country as categorical variables
+  mutate(year = fct(year),
+         country = fct(country))
+
+school_fertility_df <- school_fertility_df |>
+  mutate(Continent = fct_recode(country, "Asia" = "Afghanistan", "Africa" = "Angola", "Europe" = "Albania", "Asia" = "UAE", 
+  "South America" = "Argentina", "Europe" = "Armenia", "North America" = "Antigua and Barbuda", 
+  "Australia" = "Australia", "Europe" = "Austria", "Asia" = "Azerbaijan", "Africa" = "Burundi", 
+  "Europe" = "Belgium", "Africa" = "Benin", "Africa" = "Burkina Faso", "Asia" = "Bangladesh", 
+  "Europe" = "Bulgaria", "Asia" = "Bahrain", "North America" = "Bahamas", "Europe" = "Bosnia and Herzegovina", 
+  "Europe" = "Belarus", "North America" = "Belize", "South America" = "Bolivia", "South America" = "Brazil", 
+  "Africa" = "Botswana", "Africa" = "Central African Republic", "North America" = "Canada", 
+  "Europe" = "Switzerland", "South America" = "Chile", "Asia" = "China", "Africa" = "Cote d'Ivoire", 
+  "Africa" = "Cameroon", "Africa" = "Congo, Dem. Rep.", "Africa" = "Congo, Rep.", "South America" = "Colombia", 
+  "Africa" = "Comoros", "Africa" = "Cape Verde", "North America" = "Costa Rica", "North America" = "Cuba", 
+  "Europe" = "Cyprus", "Europe" = "Czech Republic", "Europe" = "Germany", "Africa" = "Djibouti", 
+  "Europe" = "Denmark", "North America" = "Dominican Republic", "Africa" = "Algeria", 
+  "South America" = "Ecuador", "Africa" = "Egypt", "Africa" = "Eritrea", "Europe" = "Spain", 
+  "Europe" = "Estonia", "Africa" = "Ethiopia", "Europe" = "Finland", "Australia" = "Fiji", "Europe" = "France", 
+  "Africa" = "Gabon", "Europe" = "UK", "Europe" = "Georgia", "Africa" = "Ghana", "Africa" = "Guinea", 
+  "Africa" = "Gambia", "Africa" = "Guinea-Bissau", "Africa" = "Equatorial Guinea", "Europe" = "Greece", 
+  "North America" = "Guatemala", "South America" = "Guyana", "North America" = "Honduras", "Europe" = "Croatia", 
+  "North America" = "Haiti", "Europe" = "Hungary", "Asia" = "Indonesia", "Asia" = "India", 
+  "Europe" = "Ireland", "Asia" = "Iran", "Asia" = "Iraq", "Asia" = "Israel", "Europe" = "Italy", 
+  "North America" = "Jamaica", "Asia" = "Jordan", "Asia" = "Japan", "Asia" = "Kazakhstan", "Africa" = "Kenya", 
+  "Asia" = "Kyrgyz Republic", "Asia" = "Cambodia", "Australia" = "Kiribati", "Asia" = "South Korea", 
+  "Asia" = "Kuwait", "Asia" = "Lao", "Asia" = "Lebanon", "Africa" = "Liberia", "North America" = "St. Lucia", 
+  "Asia" = "Sri Lanka", "Africa" = "Lesotho", "Europe" = "Lithuania", "Europe" = "Luxembourg", 
+  "Europe" = "Latvia", "Africa" = "Morocco", "Europe" = "Moldova", "Africa" = "Madagascar", 
+  "Asia" = "Maldives", "North America" = "Mexico", "Australia" = "Marshall Islands", "Europe" = "North Macedonia", 
+  "Africa" = "Mali", "Asia" = "Myanmar", "Europe" = "Montenegro", "Asia" = "Mongolia", 
+  "Africa" = "Mozambique", "Africa" = "Mauritania", "Africa" = "Mauritius", "Africa" = "Malawi", 
+  "Asia" = "Malaysia", "Africa" = "Namibia", "Africa" = "Niger", "Africa" = "Nigeria", 
+  "North America" = "Nicaragua", "Europe" = "Netherlands", "Europe" = "Norway", "Asia" = "Nepal", 
+  "Australia" = "New Zealand", "Asia" = "Oman", "Asia" = "Pakistan", "North America" = "Panama", 
+  "South America" = "Peru", "Asia" = "Philippines", "Australia" = "Papua New Guinea", "Europe" = "Poland", 
+  "Europe" = "Portugal", "South America" = "Paraguay", "Asia" = "Palestine", "Asia" = "Qatar", 
+  "Europe" = "Romania", "Europe" = "Russia", "Africa" = "Rwanda", "Asia" = "Saudi Arabia", "Africa" = "Sudan", 
+  "Africa" = "Senegal", "Asia" = "Singapore", "Australia" = "Solomon Islands", "Africa" = "Sierra Leone", 
+  "North America" = "El Salvador", "Africa" = "Somalia", "Europe" = "Serbia", "Africa" = "Sao Tome and Principe", 
+  "South America" = "Suriname", "Europe" = "Slovak Republic", "Europe" = "Slovenia", "Europe" = "Sweden", 
+  "Africa" = "Eswatini", "Africa" = "Seychelles", "Asia" = "Syria", "Africa" = "Chad", "Africa" = "Togo", 
+  "Asia" = "Thailand", "Asia" = "Tajikistan", "Asia" = "Turkmenistan", "Asia" = "Timor-Leste", 
+  "Australia" = "Tonga", "North America" = "Trinidad and Tobago", "Africa" = "Tunisia", "Asia" = "Turkey", 
+  "Asia" = "Taiwan", "Africa" = "Tanzania", "Africa" = "Uganda", "Europe" = "Ukraine", "South America" = "Uruguay", 
+  "North America" = "USA", "Asia" = "Uzbekistan", "South America" = "Venezuela", "Asia" = "Vietnam", 
+  "Australia" = "Vanuatu", "Australia" = "Samoa", "Asia" = "Yemen", "Africa" = "South Africa", 
+  "Africa" = "Zambia", "Africa" = "Zimbabwe"))
+
+#In order to create the factor continent by faceting countries, we referred to www.state.gov/countries-and-areas-list/. The citation can be found in the references section below. 
+```
+
+
+To allow for the appropriate analysis across both data sets, data was first pivoted to a longer format. This step will allow us to have each year as a row instead of a column, which will make data visualization much easier and will allow us to make animated visuals of plots over time. The same data cleaning process was performed on the data set for babies per woman, creating two identically formatted data sets. 
+
+Once we cleaned both data sets, data sets were joined to combine matching values in both data sets since the interest of the analysis is to compare the relationship between the two variables ensuring there was data for each observation. Next, variables for year and country were made categorical, allowing for easier grouping and leading to cleaner visualization.
+
+### Introduction
+
+Over the last 100 years global fertility rates have undergone dramatic changes, influenced by shifting economic conditions, advancements in healthcare, and educational access. There have been many studies on the effect of female education on fertility rates that suggest that women who receive more education tend to have fewer children. Education can increase knowledge about birth control and reproductive health as well as open doors to career opportunities. 
+
+In this study, we explore the relationship between mean years of schooling for women aged 15-44 and the total fertility rate (expressed as babies per woman) using data from **GapMinder**. By analyzing data from over 175 countries across multiple years, we aim to determine the strength and direction of this relationship across an extensive timeline and geographic regions. It is hypothesized that as education increases, the total fertility rate will decrease as many similar studies have observed in the past. 
+
+Throughout this study, we will use data visualization, linear regression modeling, and simulation-based predictive modeling to analyze the relationship between fertility rate and years in school of women, examining form, direction, and validity of our model. 
+
+
+### The Data & Variables of Interest
+
+#### Background
+
+The two variables of interest to explore from GapMinder are the number of babies per woman and the mean years in school (women ages 15-44). We are curious to see how mean years in school compares to the number of children women have across the world. The babies per woman variable is the number of children that would be born to a woman should she live through her childbearing years and bear children in accordance with age-specific fertility rates of the specified year. Overall, it is the statistical indicator of total fertility rate (GapMinder). The mean years in school variable is the average number of years of school attended by women of reproductive age, ages 15-44. Schooling that is accounted for in the years includes primary, secondary, and tertiary education (GapMinder). Data is taken across years in both data sets including 175 countries in the years in school school data set and 197 countries in the children per woman data set. Data contain no missing values, however, the data sets do not include the same observations (i.e. countries) and the same range of years.
+
+#### Hypothesized Relationships of Variables
+
+We expect the relationship between mean years of schooling for women aged 15-44 and babies per woman (total fertility rate) to be strongly negative. We believe that an increase in years of schooling will be associated with a decrease in the amount of children per woman. With increased education, women are better informed on birth control and other contraception methods. Additionally, schools often provide resources such as birth control, meaning women who have been to school have had greater access to resources. An education also opens up career opportunities for women. Women who have developed careers often have less time to have children in their child bearing years. Lastly, cultural differences also affect the total fertility rate. Areas and countries where women don't typically receive an education or much schooling tend to have gender roles that depict women as mothers before all else, which could encourage more births. Ultimately, there are many factors which indicate that the relationship between the number of babies per woman and the mean years in school is an inverse relationship.
+
+
+### Visualizing the Data
+
+#### Scatterplot Comparing Babies Per Woman vs. Mean Years in School
+First, we decided to create a scatter plot to visualize the potential relationship between the mean years in school and the number of babies per woman. The visual can be observed below.
+```{r}
+school_fertility_df |>
+  group_by(country, Continent) |>
+  summarize(
+    avg_babies = mean(babies_per_woman),
+    avg_years = mean(mean_years_in_school)) |>
+  ggplot(aes(x = avg_years, y = avg_babies)) + 
+  geom_point(aes(color = Continent), size = 1.5, alpha = 1.2) + 
+  geom_smooth(method = "lm", se = FALSE, aes(color = "Linear Fit for All Countries")) +
+  labs(x = "Average Mean Years in School", y = "", subtitle = "Average Babies per Woman",
+       title = "Average Babies per Woman vs. Average Mean Years in School Across Years 
+for 175 Countries in the World") +
+  scale_x_continuous(breaks = seq(0, 15, by = 3)) +
+  scale_y_continuous(breaks = seq(0, 10, by = 2)) +
+  scale_color_manual(values = c(
+  "Linear Fit for All Countries" = "black", 
+  "Africa" = "#E69F00",
+  "Asia" = "#56B4E9",
+  "Europe" = "#009E73",
+  "South America" = "#F0E442",
+  "North America" = "#0072B2",
+  "Australia" = "#CC79A7"
+)) +
+  theme_bw()
+
+  
+```
+
+
+::: callout-note
+
+Colors are chosen to be color-blind friendly. Each color represents a continent.
+
+:::
+
+Each point in the scatter plot above represents a country, which is categorized by continent (shown by color). The point's position is based on the average years of schooling and the number of babies per woman, aggregated over years. Visually, it appears as though there is a strong negative linear correlation between the mean years in school and the number of babies per woman. That is, if a country has more mean years in school, it is expected that the average babies per woman of that country in that given year is lower. As for the different continents, Africa tends to have the highest number of babies per woman and lowest average years in school, while Europe has the highest average years in school and lowest babies per women.
+
+::: callout-note
+
+This is the plot for the data that will be used in the coming actual regression model. Reminder, data was aggregated by finding the average mean years in school across all years for each country and the average number of babies per woman across all years for each country.
+:::
+
+
+
+#### Animated Visual of Babies per Woman vs. Mean Years in School Over the Years
+
+
+```{r}
+#Visual 2
+visual_2 <- school_fertility_df |>
+  mutate(year = as.numeric(as.character(year))) |>
+  group_by(year, country) |>
+  ggplot(aes(x = mean_years_in_school, y = babies_per_woman)) +
+  geom_point(aes(color = Continent), alpha = 1, size = 1.5) +
+  geom_smooth(method = "lm", se = FALSE, aes(color = "Linear Fit for All Countries")) +
+  scale_color_manual(values = c(
+  "Linear Fit for All Countries" = "black", 
+  "Africa" = "#E69F00",
+  "Asia" = "#56B4E9",
+  "Europe" = "#009E73",
+  "South America" = "#F0E442",
+  "North America" = "#0072B2",
+  "Australia" = "#CC79A7"
+)) +
+  labs(title = 'Babies Per Woman vs. Mean Years in School by Continent for 175 Countries in Year {closest_state}', x = "Mean Years in School", y = "", subtitle = "Babies Per Woman") +
+  transition_states(as.factor(year), transition_length = 1, state_length = 1) +
+  ease_aes("linear") +
+scale_x_continuous(breaks = seq(0, 
+15, by = 3)) +
+  scale_y_continuous(breaks = seq(0, 9, by = 1.5)) +
+  theme_bw()
+
+animation <- animate(visual_2, nframes = 100, fps = 10, renderer = gifski_renderer(), width = 600, height = 500)
+
+anim_save("fertility_education.gif", animation)
+
+knitr::include_graphics("fertility_education.gif")
+
+```
+
+This GIF demonstrates the same linear relationship as the scatter plot above aggregated over the years 1970 to 2009. Over time, the slope of the association becomes less steep, meaning the observed linear relationship is weakening. Additionally, there appears to be an overall decrease in the number of babies per women over time.
+
+
+
+### Analyzing the Relationship - Linear Regression
+
+#### Modeling Babies per Woman on Mean Years in School
+
+After visualizing two quantitative variables with a scatter plot, we can perform a linear regression to view the overall trend of our data with a line of best fit. In this data set, it is seen that the line of best fit has a negative slope, supporting our aforementioned hypothesis of a strong negative linear relationship between the two variables. Another key component of the line of best fit is the y-intercept: in this model, if a given country's women in a given year have 0 average years in school, we'd expect the number of babies per woman to be the y-intercept of the graph.
+
+
+```{r}
+country_summary <- school_fertility_df |>
+  group_by(country) |>
+  summarise(avg_school = mean(mean_years_in_school),
+         avg_babies = mean(babies_per_woman))
+
+lin_reg <- lm(data = country_summary, avg_babies ~ avg_school)
+
+summary_lin_reg <- tidy(lin_reg, conf.int = TRUE)
+summary_lin_reg |>
+  gt() |>
+  cols_label(
+    term = "Term",
+    estimate = "Estimate",
+    std.error = "Std. Error",
+    statistic = "T-Statistic",
+    p.value = "P-Value",
+    conf.low = "Conf. Low",
+    conf.high = "Conf. High"
+  ) |>
+  fmt_number(
+    columns = c(estimate, std.error, statistic, p.value, conf.low, conf.high),
+    decimals = 3
+  ) |>
+  tab_header(
+    title = "Linear Regression of Babies per Woman on Mean Years of Schooling",
+    subtitle = "Regression results with confidence intervals"
+  ) |>
+  tab_options(
+    table.font.size = px(14),
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(16),
+    column_labels.font.weight = "bold"
+  ) |>
+  fmt_scientific(columns = p.value, decimals = 3) |> 
+  tab_style(
+    style = list(cell_borders(sides = "all", color = "gray70", weight = px(1))),
+    locations = cells_body()
+  )
+
+```
+
+
+**Expected Average Babies Per Women** = 7.09 - 0.466(Average Years of School)
+
+Based on the regression above and the parameter estimates, the **slope** is estimated to be -0.466. This means that for every increase in one year of school, babies per woman is expected to decrease by 0.466 babies on average. Additionally, the estimated **intercept** value is 7.089 babies per woman. This means if a given country's women in a given year have 0 average years in school, we'd expect the amount of babies per woman in that year to be approximately 7, although this may not be a meaningful or practical value.
+
+
+#### Analyzing the Model Fit
+
+```{r}
+var_table <- country_summary |>
+  summarise(
+    var_resp = var(avg_babies, na.rm = TRUE),
+    var_fit = var(fitted(lin_reg), na.rm = TRUE),
+    var_resid = var(residuals(lin_reg), na.rm = TRUE))
+ 
+var_table |>
+  gt() |>
+  tab_header(
+    title = "Variance Decomposition of Linear Regression",
+    subtitle = "Breakdown of response, fitted values, and residual variances"
+  ) |>
+  fmt_number(
+    columns = everything(),
+    decimals = 3
+  ) |>
+  cols_label(
+    var_resp = "Response Variance",
+    var_fit = "Fitted Values Variance",
+    var_resid = "Residuals Variance"
+  ) |>
+  tab_options(
+    table.font.size = px(14),
+    heading.title.font.size = px(18),
+    heading.subtitle.font.size = px(16),
+    column_labels.font.weight = "bold"
+  ) |>
+  tab_style(
+    style = list(cell_borders(sides = "all", color = "gray70", weight = px(1))),
+    locations = cells_body()
+  )
+
+
+```
+
+Our total response variance is 3.321. This total variance can be broken up into two components, fitted values variance and residuals variance. Our fitted values variance is 2.475, and our residuals variance is 0.846. By comparing these two variance components, we can see that 74.53% of our variation is accounted for by our regression model, making our R² value 0.7453. This R² value suggests that approximately 74.53% of the variation in the number of babies per woman can be explained by the mean years in school (i.e. the independent variable in the model). This indicates a strong relationship between the two variables. However, while the model fits the data well, given the large R² value, it's important to note that correlation does not imply causation, and other unobserved factors may be influencing the observed relationship.
+
+
+### Comparing Observed Data to Simulated Data
+
+#### Visualizing Simulations From the Model
+
+```{r}
+pred_num_babies <- predict(lin_reg)
+est_sigma <- sigma(lin_reg)
+
+rand_error <- function(x, mean = 0, sd){
+  
+  error <- rnorm(length(x), mean, sd)
+  x_prime <- x + error
+  return(x_prime)
+
+}
+
+set.seed(123)
+sim_response <- tibble(sim_num_babies = rand_error(pred_num_babies, sd = est_sigma))
+
+full_data <- country_summary |> 
+  select(avg_school, avg_babies) |> 
+  bind_cols(sim_response)
+
+full_data |>
+  ggplot(aes(x = sim_num_babies, y = avg_babies)) +
+  geom_point(alpha = 0.6, size = 1.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  geom_abline(slope = 1, intercept = 0, 
+              linetype = "dashed", color = "red") +
+  labs(x = "Simulated Mean Number of Babies", y = "", subtitle = "Observed Mean Number of Babies", 
+       title = "Simulated vs. Observed Mean Number of Babies Per Woman Across 
+175 Countries in the World") +
+  scale_x_continuous(breaks = seq(0, 
+10, by = 2)) +
+  scale_y_continuous(breaks = seq(0, 10, by = 2)) +
+  theme_bw()
+```
+
+Theoretically, if the simulated data were exactly the same as the observed data, the relationship would be modeled by the line y = x. We can see that the fitted (blue) linear regression line is approximately the line y = x (red). Thus, we can conclude that the simulated values for mean number of babies are similar to the observed values for mean number of babies.
+
+Below are the individual side-by-side plots, shown to compare the simulated vs. the observed data.
+
+```{r, fig.width=10, fig.height=6}
+#OBSERVED MEAN NUMBER OF BABIES VS. AVG MEAN YEARS IN SCHOOL
+obs_visual <- full_data |>
+  ggplot(aes(x = avg_school, y = avg_babies)) +
+  geom_point(alpha = 0.6, size = 1.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = "Average Mean Years in School", y = "", subtitle = "Observed Mean Number of Babies Per Woman") +
+  scale_x_continuous(breaks = seq(0, 
+15, by = 3)) +
+  scale_y_continuous(breaks = seq(0, 15, by = 3)) +
+  theme_bw()
+
+
+#SIMULATED MEAN NUMBER OF BABIES VS. AVG MEAN YEARS IN SCHOOL
+sim_visual <- full_data |>
+  ggplot(aes(x = avg_school, y = sim_num_babies)) +
+  geom_point(alpha = 0.6, size = 1.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = "Average Mean Years in School", y = "", subtitle = "Simulated Mean Number of Babies Per Woman") +
+  scale_x_continuous(breaks = seq(0, 
+15, by = 3)) +
+  scale_y_continuous(breaks = seq(0, 15, by = 3)) +
+  theme_bw()
+
+obs_visual + sim_visual
+```
+
+#### Performing Predictive Checks
+
+
+```{r}
+simulation <- function(mod) {
+  pred_num_babies <- predict(mod) # Using the predict on the mod to generate simulated response values
+  est_sigma <- sigma(mod) # Defining the standard deviation of our predicted model
+  
+  rand_error <- function(x, mean = 0, sd = est_sigma) {
+    error <- rnorm(length(x), mean, sd)
+    x_prime <- x + error
+    return(x_prime) # Code from 3.1 to generate a function that applies random error to response values
+  }
+  
+  sim_response <- rand_error(pred_num_babies, sd = est_sigma) # Making a numeric vector of all of our response values
+  return(sim_response)  # Return numeric vector 
+}
+
+set.seed(123) # Set same seed as above
+num_simulations <- 1000
+
+simulated_datasets <- map(1:num_simulations, ~ simulation(lin_reg)) # Make 1000 simulated datasets
+
+rsquareds <- map_dbl(simulated_datasets, function(sim_data) {
+  sim_df <- tibble(avg_babies = country_summary$avg_babies, sim_num_babies = sim_data) |>
+    drop_na() # Creating a dataframe to be able to compare observed and simulated values and dropping NA's
+  reg <- lm(avg_babies ~ sim_num_babies, data = sim_df) # Run a regression on each simulated dataset
+  summary(reg)$r.squared # Extracting R-squared
+})
+
+# Plot the distribution of Rsquared values
+ggplot(tibble(Rsquared = rsquareds), aes(x = Rsquared)) +
+  geom_histogram(bins = 40, fill = "purple", alpha = 0.6, aes(y = ..density..)) +
+  geom_density(color = "blue", size = 1) +
+  labs(title = "Distribution of R-squared Values from Simulated Regressions",
+       x = "R-squared Values",
+       y = "Frequency") +
+  theme_bw()
+
+```
+
+The simulated R² values seem to follow a normal distribution, being centered at .55. This means that the simulated data, on average, contains 55% of the variability in the number of babies per woman being explained by the variability in mean years in school. Since the actual R² value in the observed data was .7453, it can be concluded that the simulated model does not fully capture the relationship between the two variables in the data set.
+
+## Conclusion and Key Takeaways:
+
+Our analysis of the relationship between the mean years of schooling for women aged 15-44 and the number of babies per woman (total fertility rate) across 175 countries strongly supports our initial hypothesis. Through data visualization and statistical modeling, we observed a strong negative correlation between these two variables, suggesting that as the average years of schooling for women increases, the fertility rate tends to decrease.
+
+The scatter plot and animated visualization confirmed this trend over time, showing that countries with higher education levels for women consistently have lower fertility rates. Additionally, the linear regression model estimated that for every additional year of schooling, the expected number of children per woman decreases by approximately 0.466 children. The model’s R² value of 0.7453 indicates that nearly 75% of the variability in fertility rates can be explained by differences in educational attainment.
+
+However, our predictive checks and simulations suggest that while education is a significant factor, there are likely other contributing influences—such as economic conditions, cultural norms, access to healthcare, and governmental policies—that also impact fertility rates. Our simulated models had an average R² value of 0.55, meaning that while education remains a key explanatory variable, additional factors need to be explored for a more comprehensive understanding.
+
+Overall, this study reinforces the importance of education in shaping demographic and societal trends. As countries continue to invest in education—particularly for women—they may also experience shifts in population growth patterns, economic development, and gender equality.
+
+## References
+
+“Countries and Areas.” U.S. Department of State, U.S. Department of State, www.state.gov/countries-and-areas-list/. Accessed 14 Mar. 2025.
+
+“Data.” Gapminder, www.gapminder.org/data/. Accessed 19 Mar. 2025.
