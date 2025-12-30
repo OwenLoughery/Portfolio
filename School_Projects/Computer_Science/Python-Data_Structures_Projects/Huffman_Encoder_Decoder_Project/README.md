@@ -51,11 +51,11 @@ Two full testing suites:
 
 Includes edge cases:
 
-✔ empty files  
-✔ single-character files  
-✔ missing file → raises FileNotFoundError  
-✔ newline handling  
-✔ compression + decompression match original
+empty files  
+single-character files  
+missing file → raises FileNotFoundError  
+newline handling  
+compression + decompression match original
 
 ---
 
