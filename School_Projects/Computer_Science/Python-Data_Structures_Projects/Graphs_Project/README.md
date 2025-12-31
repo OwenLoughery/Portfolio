@@ -26,8 +26,8 @@ stacks implemented from scratch.
 
 Full unit test coverage for:
 
-✔ DFS behavior  
-✔ BFS traversal  
-✔ bipartite detection  
-✔ disconnected graphs  
-✔ edge cases (single vertex, empty graph, etc.)
+- DFS behavior  
+- BFS traversal  
+- bipartite detection  
+- disconnected graphs  
+- edge cases (single vertex, empty graph, etc.)
