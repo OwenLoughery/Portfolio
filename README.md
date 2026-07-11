@@ -1,8 +1,7 @@
 # Owen Loughery — Data Science Portfolio
 
-Data science and machine learning projects spanning computer vision, 
-predictive modeling, large-scale data processing, and statistical analysis. 
-Below are highlights — click any project for full code and writeups.
+Data science and machine learning projects spanning predictive modeling, computer vision, large-scale data work, statistical analysis, and much more. 
+Below are some highlights — click any project for full code and writeups!
 
 ## Machine Learning & Computer Vision
 - **[Post-Disaster Satellite Image Classification](School_Projects/Data_Science/Python-FMOW_Disaster_Classification)** 
